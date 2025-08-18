@@ -2,78 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Supabase Image Upload & View</title>
+  <title>Supabase Image Upload & Gallery</title>
   <style>
     img { margin: 5px; border: 1px solid #ccc; }
   </style>
 </head>
-<body>
+<body>km
   <h2>Upload Image</h2>
   <input type="file" id="fileInput" />
-  <button onclick="uploadImage()">Upload</button>
+  <button id="uploadBtn">Upload</button>
   <p id="status"></p>
+
   <h3>Preview:</h3>
   <img id="preview" width="200" />
 
-  <h2>Uploaded Images</h2>
-  <button onclick="viewImages()">View Images</button>
+  <h2>All Uploaded Images:</h2>
   <div id="gallery"></div>
 
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-    // Replace with your Supabase project URL and anon key
+    // Replace with your Supabase project info
     const supabaseUrl = "https://oimiskqpsvcwvlfrmtwf.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbWlza3Fwc3Zjd3ZsZnJtdHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MjQ1MzQsImV4cCI6MjA3MTEwMDUzNH0.EFhfKj_9wneZ4Px64n1Vq9cASHN43xmgBEWwNAFycTE";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Upload Image Function
+    const fileInput = document.getElementById("fileInput");
+    const statusEl = document.getElementById("status");
+    const previewEl = document.getElementById("preview");
+    const galleryEl = document.getElementById("gallery");
+    const uploadBtn = document.getElementById("uploadBtn");
+
+    // Upload Image
     async function uploadImage() {
-      const file = document.getElementById("fileInput").files[0];
+      const file = fileInput.files[0];
       if (!file) {
-        document.getElementById("status").textContent = "Please select a file!";
+        statusEl.textContent = "Please select a file!";
         return;
       }
 
       const filePath = `uploads/${Date.now()}-${file.name}`;
 
-      let { error } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("images")
-        .upload(filePath, file);
+        .upload(filePath, file, { upsert: true });
 
-      if (error) {
-        document.getElementById("status").textContent = "Upload Error: " + error.message;
+      if (uploadError) {
+        statusEl.textContent = "Upload Error: " + uploadError.message;
         return;
       }
 
       const { data } = supabase.storage.from("images").getPublicUrl(filePath);
+      statusEl.textContent = "Uploaded!";
+      previewEl.src = data.publicUrl;
 
-      document.getElementById("status").textContent = "Uploaded!";
-      document.getElementById("preview").src = data.publicUrl;
+      // Refresh gallery automatically
+      viewImages();
     }
-    window.uploadImage = uploadImage;
+
+    uploadBtn.addEventListener("click", uploadImage);
 
     // View All Uploaded Images
     async function viewImages() {
       const { data, error } = await supabase.storage.from("images").list("uploads");
 
       if (error) {
-        document.getElementById("status").textContent = "Error: " + error.message;
+        statusEl.textContent = "Error fetching images: " + error.message;
         return;
       }
 
-      const gallery = document.getElementById("gallery");
-      gallery.innerHTML = ""; // clear previous images
+      galleryEl.innerHTML = ""; // clear gallery
 
-      data.forEach(file => {
-        const url = supabase.storage.from("images").getPublicUrl(`uploads/${file.name}`).data.publicUrl;
+      if (!data || data.length === 0) {
+        galleryEl.textContent = "No images uploaded yet.";
+        return;
+      }
+
+      for (let file of data) {
+        const filePath = `uploads/${file.name}`;
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(filePath);
         const img = document.createElement("img");
-        img.src = url;
+        img.src = urlData.publicUrl;
         img.width = 150;
-        gallery.appendChild(img);
-      });
+        galleryEl.appendChild(img);
+      }
     }
-    window.viewImages = viewImages;
+
+    // Load gallery on page load
+    viewImages();
+
   </script>
 </body>
 </html>
