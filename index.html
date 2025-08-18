@@ -12,8 +12,11 @@
   <pre id="output"></pre>
 
   <!-- Supabase JS Library -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script>
+  
+  <script type = "module">
+// Import from the official Supabase CDN (ESM module)
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
     // Replace with your own Supabase project info
     const SUPABASE_URL = "https://gguevisqcraedmwzbhwa.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndWV2aXNxY3JhZWRtd3piaHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0OTg1MjMsImV4cCI6MjA3MTA3NDUyM30._4IsycNw-nvpzKEpi8WZHiJMAWOcXK6KImKYcnsOWvM";
