@@ -2,23 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Upload Image</title>
+  <title>Supabase Image Upload & View</title>
+  <style>
+    img { margin: 5px; border: 1px solid #ccc; }
+  </style>
 </head>
 <body>
-  <h2>Upload Imagelmd</h2>
+  <h2>Upload Image</h2>
   <input type="file" id="fileInput" />
   <button onclick="uploadImage()">Upload</button>
   <p id="status"></p>
+  <h3>Preview:</h3>
   <img id="preview" width="200" />
+
+  <h2>Uploaded Images</h2>
+  <button onclick="viewImages()">View Images</button>
+  <div id="gallery"></div>
 
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-    // Put your own URL and anon key here
+    // Replace with your Supabase project URL and anon key
     const supabaseUrl = "https://oimiskqpsvcwvlfrmtwf.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbWlza3Fwc3Zjd3ZsZnJtdHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MjQ1MzQsImV4cCI6MjA3MTEwMDUzNH0.EFhfKj_9wneZ4Px64n1Vq9cASHN43xmgBEWwNAFycTE";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Upload Image Function
     async function uploadImage() {
       const file = document.getElementById("fileInput").files[0];
       if (!file) {
@@ -33,7 +42,7 @@
         .upload(filePath, file);
 
       if (error) {
-        document.getElementById("status").textContent = "Error: " + error.message;
+        document.getElementById("status").textContent = "Upload Error: " + error.message;
         return;
       }
 
@@ -42,8 +51,29 @@
       document.getElementById("status").textContent = "Uploaded!";
       document.getElementById("preview").src = data.publicUrl;
     }
-
     window.uploadImage = uploadImage;
+
+    // View All Uploaded Images
+    async function viewImages() {
+      const { data, error } = await supabase.storage.from("images").list("uploads");
+
+      if (error) {
+        document.getElementById("status").textContent = "Error: " + error.message;
+        return;
+      }
+
+      const gallery = document.getElementById("gallery");
+      gallery.innerHTML = ""; // clear previous images
+
+      data.forEach(file => {
+        const url = supabase.storage.from("images").getPublicUrl(`uploads/${file.name}`).data.publicUrl;
+        const img = document.createElement("img");
+        img.src = url;
+        img.width = 150;
+        gallery.appendChild(img);
+      });
+    }
+    window.viewImages = viewImages;
   </script>
 </body>
 </html>
