@@ -1,53 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<h2>This is for upload image</h2>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>image uploader</title>
+  <meta charset="UTF-8">
+  <title>Upload Image</title>
 </head>
 <body>
-    <input type="file" id="fileInput" />
-<button onclick="uploadImage()">Upload Image</button>
-<pre id="output"></pre>
+  <h2>Upload Image</h2>
+  <input type="file" id="fileInput" />
+  <button onclick="uploadImage()">Upload</button>
+  <p id="status"></p>
+  <img id="preview" width="200" />
 
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-// Your Supabase info
-const SUPABASE_URL = "https://gguevisqcraedmwzbhwa.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndWV2aXNxY3JhZWRtd3piaHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0OTg1MjMsImV4cCI6MjA3MTA3NDUyM30._4IsycNw-nvpzKEpi8WZHiJMAWOcXK6KImKYcnsOWvM";
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Put your own URL and anon key here
+    const supabaseUrl = "https://oimiskqpsvcwvlfrmtwf.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbWlza3Fwc3Zjd3ZsZnJtdHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MjQ1MzQsImV4cCI6MjA3MTEwMDUzNH0.EFhfKj_9wneZ4Px64n1Vq9cASHN43xmgBEWwNAFycTE";
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-window.uploadImage = async function () {
-  const input = document.getElementById("fileInput");
-  if (input.files.length === 0) {
-    alert("Please choose a file!");
-    return;
-  }
+    async function uploadImage() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) {
+        document.getElementById("status").textContent = "Please select a file!";
+        return;
+      }
 
-  const file = input.files[0];
-  const fileName = file.name;
+      const filePath = `uploads/${Date.now()}-${file.name}`;
 
-  // Upload to Supabase Storage
-  const { data, error } = await supabase.storage
-    .from("images")      // your bucket name
-    .upload(fileName, file, {
-      cacheControl: "3600",
-      upsert: true       // overwrite if same name exists
-    });
+      let { error } = await supabase.storage
+        .from("images")
+        .upload(filePath, file);
 
-  if (error) {
-    document.getElementById("output").textContent = "Error: " + error.message;
-  } else {
-    // Get public URL
-    const { publicUrl, error: urlError } = supabase.storage
-      .from("images")
-      .getPublicUrl(fileName);
+      if (error) {
+        document.getElementById("status").textContent = "Error: " + error.message;
+        return;
+      }
 
-    document.getElementById("output").textContent =
-      urlError ? "Error: " + urlError.message : "Uploaded! URL: " + publicUrl;
-  }
-}
-</script>
+      const { data } = supabase.storage.from("images").getPublicUrl(filePath);
+
+      document.getElementById("status").textContent = "Uploaded!";
+      document.getElementById("preview").src = data.publicUrl;
+    }
+
+    window.uploadImage = uploadImage;
+  </script>
 </body>
 </html>
