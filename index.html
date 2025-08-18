@@ -21,25 +21,25 @@
     const SUPABASE_URL = "https://gguevisqcraedmwzbhwa.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndWV2aXNxY3JhZWRtd3piaHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0OTg1MjMsImV4cCI6MjA3MTA3NDUyM30._4IsycNw-nvpzKEpi8WZHiJMAWOcXK6KImKYcnsOWvM";
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function insertUser() {
-      const { data, error } = await supabase
-        .from("users")
-        .insert([{ name: "Eyob", age: 16 }]);
+window.insertUser = async function () {
+  const { data, error } = await supabase
+    .from("users")
+    .insert([{ name: "Eyob", age: 16 }]);
 
-      document.getElementById("output").textContent =
-        error ? "Error: " + error.message : "Inserted: " + JSON.stringify(data);
-    }
+  document.getElementById("output").textContent =
+    error ? "Error: " + error.message : "Inserted: " + JSON.stringify(data);
+};
 
-    async function getUsers() {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*");
+window.getUsers = async function () {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*");
 
-      document.getElementById("output").textContent =
-        error ? "Error: " + error.message : "Users: " + JSON.stringify(data, null, 2);
-    }
+  document.getElementById("output").textContent =
+    error ? "Error: " + error.message : "Users: " + JSON.stringify(data, null, 2);
+};
   </script>
 </body>
 </html>
