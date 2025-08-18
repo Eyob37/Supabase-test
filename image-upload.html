@@ -5,7 +5,7 @@
   <title>Upload Image</title>
 </head>
 <body>
-  <h2>Upload Image</h2>
+  <h2>Upload Image2</h2>
   <input type="file" id="fileInput" />
   <button onclick="uploadImage()">Upload</button>
   <p id="status"></p>
@@ -16,7 +16,7 @@
 
     // Put your own URL and anon key here
     const supabaseUrl = "https://oimiskqpsvcwvlfrmtwf.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndWV2aXNxY3JhZWRtd3piaHdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0OTg1MjMsImV4cCI6MjA3MTA3NDUyM30._4IsycNw-nvpzKEpi8WZHiJMAWOcXK6KImKYcnsOWvM";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdndWV2aXNxY3JhZWRtd3piaHdhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTQ5ODUyMywiZXhwIjoyMDcxMDc0NTIzfQ.6Py8pr3EUaJwknG7V7Oeg-sSeoarDfwTKa3uw1KRzqg";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     async function uploadImage() {
