@@ -8,7 +8,7 @@
   </style>
 </head>
 <body>
-  <h2>Upload Image</h2>
+  <h2>Upload Image updated view</h2>
   <input type="file" id="fileInput" />
   <button onclick="uploadImage()">Upload</button>
   <p id="status"></p>
@@ -16,7 +16,7 @@
   <img id="preview" width="200" />
 
   <h2>Uploaded Images</h2>
-  <button onclick="viewImages()">View Images</button>
+  <button onclick="listImages()">View Images</button>
   <div id="gallery"></div>
 
   <script type="module">
@@ -28,52 +28,32 @@
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Upload Image Function
-    async function uploadImage() {
-      const file = document.getElementById("fileInput").files[0];
-      if (!file) {
-        document.getElementById("status").textContent = "Please select a file!";
-        return;
-      }
+async function listImages() {
+  const { data, error } = await supabase.storage
+    .from("images")
+    .list("uploads", { limit: 100 });
 
-      const filePath = `uploads/${Date.now()}-${file.name}`;
+  if (error) {
+    console.error("List error:", error.message);
+    return;
+  }
 
-      let { error } = await supabase.storage
-        .from("images")
-        .upload(filePath, file);
+  const container = document.getElementById("gallery");
+  container.innerHTML = ""; // clear before showing
 
-      if (error) {
-        document.getElementById("status").textContent = "Upload Error: " + error.message;
-        return;
-      }
+  data.forEach(file => {
+    const { data: urlData } = supabase.storage
+      .from("images")
+      .getPublicUrl("uploads/" + file.name);
 
-      const { data } = supabase.storage.from("images").getPublicUrl(filePath);
-
-      document.getElementById("status").textContent = "Uploaded!";
-      document.getElementById("preview").src = data.publicUrl;
-    }
-    window.uploadImage = uploadImage;
-
-    // View All Uploaded Images
-    async function viewImages() {
-      const { data, error } = await supabase.storage.from("images").list("uploads");
-
-      if (error) {
-        document.getElementById("status").textContent = "Error: " + error.message;
-        return;
-      }
-
-      const gallery = document.getElementById("gallery");
-      gallery.innerHTML = ""; // clear previous images
-
-      data.forEach(file => {
-        const url = supabase.storage.from("images").getPublicUrl(`uploads/${file.name}`).data.publicUrl;
-        const img = document.createElement("img");
-        img.src = url;
-        img.width = 150;
-        gallery.appendChild(img);
-      });
-    }
-    window.viewImages = viewImages;
+    const img = document.createElement("img");
+    img.src = urlData.publicUrl;
+    img.width = 150;
+    img.style.margin = "5px";
+    container.appendChild(img);
+  });
+}
+window.listImages = listImages;
   </script>
 </body>
 </html>
