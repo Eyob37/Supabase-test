@@ -55,7 +55,7 @@
 
     // Upload Image Function
 async function listImages() {
-console.log("it is gettin");
+
   const { data, error } = await supabase.storage
     .from("images")
     .list("uploads", { limit: 100 });
@@ -78,6 +78,7 @@ console.log("it is gettin");
     img.width = 150;
     img.style.margin = "5px";
     container.appendChild(img);
+console.log("it is gettin");
   });
 }
 window.listImages = listImages;
