@@ -27,6 +27,32 @@
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbWlza3Fwc3Zjd3ZsZnJtdHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MjQ1MzQsImV4cCI6MjA3MTEwMDUzNH0.EFhfKj_9wneZ4Px64n1Vq9cASHN43xmgBEWwNAFycTE";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+   // Upload Image Function
+    async function uploadImage() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) {
+        document.getElementById("status").textContent = "Please select a file!";
+        return;
+      }
+
+      const filePath = `uploads/${Date.now()}-${file.name}`;
+
+      let { error } = await supabase.storage
+        .from("images")
+        .upload(filePath, file);
+
+      if (error) {
+        document.getElementById("status").textContent = "Upload Error: " + error.message;
+        return;
+      }
+
+      const { data } = supabase.storage.from("images").getPublicUrl(filePath);
+
+      document.getElementById("status").textContent = "Uploaded!";
+      document.getElementById("preview").src = data.publicUrl;
+    }
+    window.uploadImage = uploadImage;
+
     // Upload Image Function
 async function listImages() {
   const { data, error } = await supabase.storage
