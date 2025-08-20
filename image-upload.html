@@ -55,6 +55,7 @@
 
     // Upload Image Function
 async function listImages() {
+console.log("it is gettin");
   const { data, error } = await supabase.storage
     .from("images")
     .list("uploads", { limit: 100 });
