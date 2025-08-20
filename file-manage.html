@@ -185,10 +185,26 @@
           const name = document.createElement("span");
           name.textContent = file.name;
 
-          const link = document.createElement("a");
-          link.href = urlData.publicUrl;
-          link.target = "_blank";
-          link.textContent = "Download";
+						const link = document.createElement("button");
+						link.textContent = "Download";
+						link.onclick = async () => {
+						  try {
+						    const { data, error } = await supabase.storage.from("images").download("files/" + file.name);
+						    if (error) throw error;
+						
+						    // Create a download link
+						    const url = URL.createObjectURL(data);
+						    const a = document.createElement("a");
+						    a.href = url;
+						    a.download = file.name;  // forces direct download
+						    document.body.appendChild(a);
+						    a.click();
+						    a.remove();
+						    URL.revokeObjectURL(url);
+						  } catch (err) {
+						    alert("Download failed: " + err.message);
+						  }
+						};
 
           div.appendChild(name);
           div.appendChild(link);
