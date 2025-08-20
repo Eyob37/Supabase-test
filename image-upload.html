@@ -125,6 +125,25 @@
       border: 1px solid #f5c6cb;
     }
     
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .debug {
+      background: #f8f9fa;
+      color: #383d41;
+      border: 1px solid #e2e3e5;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
     .preview-container {
       text-align: center;
       margin-top: 20px;
@@ -179,6 +198,11 @@
       font-size: 1.1rem;
     }
     
+    .debug-toggle {
+      background: #6c757d;
+      margin-top: 10px;
+    }
+    
     @media (max-width: 768px) {
       .file-input-container {
         flex-direction: column;
@@ -196,7 +220,7 @@
     <h1>Supabase Image Gallery</h1>
     <p>Upload and view your images with ease</p>
   </header>
-  
+  klm
   <div class="container">
     <section class="section upload-section">
       <h2>Upload New Image</h2>
@@ -226,6 +250,9 @@
           <p>No images to display. Upload some images or click "View All Images".</p>
         </div>
       </div>
+      
+      <button class="debug-toggle" onclick="toggleDebug()">Toggle Debug Info</button>
+      <div id="debugInfo" class="debug" style="display: none;"></div>
     </section>
   </div>
 
@@ -236,6 +263,27 @@
     const supabaseUrl = "https://oimiskqpsvcwvlfrmtwf.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbWlza3Fwc3Zjd3ZsZnJtdHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MjQ1MzQsImV4cCI6MjA3MTEwMDUzNH0.EFhfKj_9wneZ4Px64n1Vq9cASHN43xmgBEWwNAFycTE";
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Debug info
+    let debugData = [];
+    
+    function addDebugInfo(message) {
+      debugData.push(`${new Date().toLocaleTimeString()}: ${message}`);
+      const debugEl = document.getElementById('debugInfo');
+      if (debugEl.style.display !== 'none') {
+        debugEl.textContent = debugData.join('\n');
+      }
+    }
+    
+    function toggleDebug() {
+      const debugEl = document.getElementById('debugInfo');
+      if (debugEl.style.display === 'none') {
+        debugEl.style.display = 'block';
+        debugEl.textContent = debugData.join('\n');
+      } else {
+        debugEl.style.display = 'none';
+      }
+    }
 
     // Show image preview when a file is selected
     document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -263,21 +311,27 @@
 
       // Show loading state
       statusEl.textContent = "Uploading...";
-      statusEl.className = "";
+      statusEl.className = "info";
+      
+      addDebugInfo(`Starting upload for file: ${file.name}`);
 
       const fileExt = file.name.split('.').pop();
       const filePath = `uploads/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
 
       try {
-        let { error } = await supabase.storage
+        let { data: uploadData, error } = await supabase.storage
           .from("images")
           .upload(filePath, file);
 
         if (error) {
+          addDebugInfo(`Upload error: ${error.message}`);
           throw error;
         }
 
-        const { data } = supabase.storage.from("images").getPublicUrl(filePath);
+        addDebugInfo(`Upload successful: ${filePath}`);
+        
+        const { data: urlData } = supabase.storage.from("images").getPublicUrl(filePath);
+        addDebugInfo(`Public URL: ${urlData.publicUrl}`);
 
         statusEl.textContent = "Upload successful!";
         statusEl.className = "success";
@@ -286,13 +340,14 @@
         fileInput.value = "";
         
         // Show the uploaded image in preview
-        document.getElementById("preview").src = data.publicUrl;
+        document.getElementById("preview").src = urlData.publicUrl;
         
         // Auto-refresh the gallery
         setTimeout(listImages, 1000);
       } catch (error) {
         statusEl.textContent = "Upload Error: " + error.message;
         statusEl.className = "error";
+        addDebugInfo(`Upload failed: ${error.message}`);
         console.error("Upload error:", error);
       }
     }
@@ -300,7 +355,7 @@
 
     // List Images Function
     async function listImages() {
-      console.log("Fetching images...");
+      addDebugInfo("Starting to list images...");
       const galleryEl = document.getElementById("gallery");
       const statusEl = document.getElementById("status");
       
@@ -308,14 +363,36 @@
       galleryEl.innerHTML = '<div class="loading">Loading images...</div>';
       
       try {
+        // First, let's check if the bucket exists and we have access
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+        
+        if (bucketsError) {
+          addDebugInfo(`Bucket list error: ${bucketsError.message}`);
+          throw new Error(`Cannot access storage: ${bucketsError.message}`);
+        }
+        
+        addDebugInfo(`Available buckets: ${buckets.map(b => b.name).join(', ')}`);
+        
+        // Check if images bucket exists
+        const imagesBucket = buckets.find(b => b.name === 'images');
+        if (!imagesBucket) {
+          throw new Error("'images' bucket doesn't exist. Please create it in Supabase dashboard.");
+        }
+        
+        addDebugInfo("Images bucket found, listing files...");
+        
+        // List files in the uploads folder
         const { data, error } = await supabase.storage
           .from("images")
           .list("uploads", { limit: 100, sortBy: { column: 'name', order: 'desc' } });
 
         if (error) {
+          addDebugInfo(`List error: ${error.message}`);
           throw error;
         }
 
+        addDebugInfo(`Found ${data ? data.length : 0} files in uploads folder`);
+        
         // Clear gallery
         galleryEl.innerHTML = "";
         
@@ -330,13 +407,22 @@
               <p>No images found. Upload some images to get started.</p>
             </div>
           `;
+          statusEl.textContent = "No images found in the uploads folder";
+          statusEl.className = "info";
           return;
         }
 
+        let imageCount = 0;
+        
         // Display each image
-        data.forEach(file => {
+        for (const file of data) {
           // Only process image files
-          if (!file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) return;
+          if (!file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+            addDebugInfo(`Skipping non-image file: ${file.name}`);
+            continue;
+          }
+          
+          addDebugInfo(`Processing image: ${file.name}`);
           
           const { data: urlData } = supabase.storage
             .from("images")
@@ -350,21 +436,49 @@
           img.alt = file.name;
           img.loading = "lazy";
           
+          // Add error handling for broken images
+          img.onerror = function() {
+            addDebugInfo(`Failed to load image: ${file.name}`);
+            this.style.display = 'none';
+          };
+          
+          img.onload = function() {
+            imageCount++;
+            addDebugInfo(`Successfully loaded image: ${file.name}`);
+          };
+          
           imgCard.appendChild(img);
           galleryEl.appendChild(imgCard);
-        });
+        }
         
-        statusEl.textContent = `Loaded ${galleryEl.children.length} images`;
-        statusEl.className = "success";
+        if (imageCount === 0) {
+          galleryEl.innerHTML = `
+            <div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21,15 16,10 5,21"></polyline>
+              </svg>
+              <p>Found image files but couldn't load them. Check permissions.</p>
+            </div>
+          `;
+          statusEl.textContent = "Could not load images. Check debug info for details.";
+          statusEl.className = "error";
+        } else {
+          statusEl.textContent = `Loaded ${imageCount} images successfully`;
+          statusEl.className = "success";
+        }
         
       } catch (error) {
         galleryEl.innerHTML = `
           <div class="error">
             <p>Error loading images: ${error.message}</p>
+            <p>Check the debug info for more details.</p>
           </div>
         `;
         statusEl.textContent = "Error loading images: " + error.message;
         statusEl.className = "error";
+        addDebugInfo(`List images failed: ${error.message}`);
         console.error("List error:", error);
       }
     }
@@ -372,6 +486,9 @@
 
     // Load images when page loads
     document.addEventListener('DOMContentLoaded', function() {
+      addDebugInfo("Page loaded successfully");
+      addDebugInfo("Supabase client initialized");
+      
       // You can automatically load images on page load if desired
       // listImages();
     });
