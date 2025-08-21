@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up Form</title>
+    <title>Authentication App</title>
     <style>
         * {
             box-sizing: border-box;
@@ -48,7 +48,7 @@
             font-weight: 500;
         }
         
-        input {
+        input, select {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #ddd;
@@ -57,7 +57,7 @@
             transition: border-color 0.3s, box-shadow 0.3s;
         }
         
-        input:focus {
+        input:focus, select:focus {
             border-color: #6e8efb;
             box-shadow: 0 0 0 2px rgba(110, 142, 251, 0.2);
             outline: none;
@@ -131,22 +131,32 @@
 </head>
 <body>
     <div class="container">
-        <div class="brand">SignUp App</div>
-        <h1>Create Account</h1>
+        <div class="brand">Auth App</div>
+        <h1>Authentication</h1>
         
         <div class="input-group">
+            <label for="action">Select Action</label>
+            <select id="action">
+                <option value="signup">Sign Up</option>
+                <option value="login">Log In</option>
+                <option value="logout">Log Out</option>
+                <option value="check">Check Session</option>
+            </select>
+        </div>
+        
+        <div class="input-group" id="email-group">
             <label for="email">Email Address</label>
             <input type="email" id="email" placeholder="Enter your email">
         </div>
         
-        <div class="input-group">
+        <div class="input-group" id="password-group">
             <label for="password">Password</label>
             <input type="password" id="password" placeholder="Enter your password">
         </div>
         
-        <button onclick="done()">
+        <button onclick="handleAuth()">
             <span class="loader" id="loader"></span>
-            <span id="button-text">Sign Up</span>
+            <span id="button-text">Execute</span>
         </button>
         
         <div class="message" id="message"></div>
@@ -162,11 +172,14 @@
         const supabase = createClient(supabaseUrl, supabaseKey);
         
         // Get DOM elements
+        const actionEl = document.getElementById("action");
         const emailEl = document.getElementById("email");
         const passwordEl = document.getElementById("password");
         const messageEl = document.getElementById("message");
         const loader = document.getElementById("loader");
         const buttonText = document.getElementById("button-text");
+        const emailGroup = document.getElementById("email-group");
+        const passwordGroup = document.getElementById("password-group");
         
         // Style inputs
         emailEl.style.cssText = `
@@ -179,46 +192,112 @@
         `;
         
         passwordEl.style.cssText = emailEl.style.cssText;
+        actionEl.style.cssText = emailEl.style.cssText;
         
-        // Define the done function
-        window.done = async function() {
+        // Update UI based on selected action
+        actionEl.addEventListener("change", updateUI);
+        
+        function updateUI() {
+            const action = actionEl.value;
+            
+            // Show/hide fields based on action
+            if (action === "logout" || action === "check") {
+                emailGroup.style.display = "none";
+                passwordGroup.style.display = "none";
+            } else {
+                emailGroup.style.display = "block";
+                passwordGroup.style.display = "block";
+            }
+            
+            // Update button text
+            buttonText.textContent = action === "signup" ? "Sign Up" : 
+                                   action === "login" ? "Log In" : 
+                                   action === "logout" ? "Log Out" : "Check Session";
+        }
+        
+        // Initialize UI
+        updateUI();
+        
+        // Define the auth handler function
+        window.handleAuth = async function() {
+            const action = actionEl.value;
+            
             // Show loading state
             loader.style.display = "inline-block";
             buttonText.textContent = "Processing...";
             
-            // Validate inputs
-            if(emailEl.value === "" || passwordEl.value === "") {
-                showMessage("Please fill all fields", "error");
-                loader.style.display = "none";
-                buttonText.textContent = "Sign Up";
-                return;
-            }
-            
-            // Validate email format
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailPattern.test(emailEl.value)) {
-                showMessage("Please enter a valid email address", "error");
-                loader.style.display = "none";
-                buttonText.textContent = "Sign Up";
-                return;
+            // Validate inputs for actions that require them
+            if (action !== "logout" && action !== "check") {
+                if(emailEl.value === "" || passwordEl.value === "") {
+                    showMessage("Please fill all fields", "error");
+                    loader.style.display = "none";
+                    updateUI();
+                    return;
+                }
+                
+                // Validate email format
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailPattern.test(emailEl.value)) {
+                    showMessage("Please enter a valid email address", "error");
+                    loader.style.display = "none";
+                    updateUI();
+                    return;
+                }
             }
             
             try {
-                // Attempt to sign up
-                const { data, error } = await supabase.auth.signUp({
-                    email: emailEl.value,
-                    password: passwordEl.value,
-                });
+                let result;
+                
+                // Handle different authentication actions
+                switch(action) {
+                    case "signup":
+                        result = await supabase.auth.signUp({
+                            email: emailEl.value,
+                            password: passwordEl.value,
+                        });
+                        break;
+                        
+                    case "login":
+                        result = await supabase.auth.signInWithPassword({
+                            email: emailEl.value,
+                            password: passwordEl.value,
+                        });
+                        break;
+                        
+                    case "logout":
+                        result = await supabase.auth.signOut();
+                        break;
+                        
+                    case "check":
+                        const session = await supabase.auth.getSession();
+                        if (session.data.session) {
+                            showMessage(`Logged in as: ${session.data.session.user.email}`, "success");
+                        } else {
+                            showMessage("No active session", "error");
+                        }
+                        loader.style.display = "none";
+                        updateUI();
+                        return;
+                }
+                
+                const { data, error } = result;
                 
                 if (error) {
-                    console.error("Signup error:", error.message);
+                    console.error(`${action} error:`, error.message);
                     showMessage("Error: " + error.message, "error");
                 } else {
-                    console.log("Signed up:", data);
-                    showMessage("Success! Check your email for confirmation.", "success");
-                    // Clear form
-                    emailEl.value = "";
-                    passwordEl.value = "";
+                    console.log(`${action} successful:`, data);
+                    
+                    if (action === "signup") {
+                        showMessage("Success! Check your email for confirmation.", "success");
+                        // Clear form
+                        emailEl.value = "";
+                        passwordEl.value = "";
+                    } else if (action === "login") {
+                        showMessage("Login successful!", "success");
+                    } else if (action === "logout") {
+                        showMessage("Logged out successfully", "success");
+                    }
                 }
             } catch (err) {
                 console.error("Unexpected error:", err);
@@ -226,7 +305,7 @@
             } finally {
                 // Reset button state
                 loader.style.display = "none";
-                buttonText.textContent = "Sign Up";
+                updateUI();
             }
         }
         
@@ -245,49 +324,18 @@
         // Allow form submission with Enter key
         document.addEventListener("keydown", function(event) {
             if (event.key === "Enter") {
-                done();
+                handleAuth();
+            }
+        });
+        
+        // Session listener
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                console.log("👤 Logged in as:", session.user.email);
+            } else {
+                console.log("⚠️ Not logged in");
             }
         });
     </script>
 </body>
 </html>
-
-<!-- 
-
-// 🔹 Sign Up
-signupBtn.addEventListener("click", async () => {
-  const { data, error } = await supabase.auth.signUp({
-    email: emailInput.value,
-    password: passwordInput.value,
-  });
-  if (error) console.error("Signup error:", error.message);
-  else console.log("Signed up:", data);
-});
-
-// 🔹 Log In
-loginBtn.addEventListener("click", async () => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: emailInput.value,
-    password: passwordInput.value,
-  });
-  if (error) console.error("Login error:", error.message);
-  else console.log("Logged in:", data);
-});
-
-// 🔹 Log Out
-logoutBtn.addEventListener("click", async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) console.error("Logout error:", error.message);
-  else console.log("Logged out");
-});
-
-// 🔹 Session Listener (runs whenever login/logout happens)
-supabase.auth.onAuthStateChange((event, session) => {
-  if (session) {
-    console.log("👤 Logged in as:", session.user.email);
-  } else {
-    console.log("⚠️ Not logged in");
-  }
-});
-
- -->
