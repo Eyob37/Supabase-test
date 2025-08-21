@@ -2,53 +2,252 @@
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page title</title>
+    <title>Sign Up Form</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        input:focus {
+            border-color: #6e8efb;
+            box-shadow: 0 0 0 2px rgba(110, 142, 251, 0.2);
+            outline: none;
+        }
+        
+        button {
+            background: linear-gradient(to right, #6e8efb, #a777e3);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+            display: none;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .brand {
+            margin-bottom: 25px;
+            color: #6e8efb;
+            font-size: 24px;
+            font-weight: 700;
+        }
+    </style>
 </head>
 <body>
-   Enter your email <input type="email"><br>
-   Enter your password <input type="password"><br>
-    <button ="done()">done</button>
-    <script type="module">
-     const emailEl = document.querySelector("input[type = 'email']");
-     const passwordEl = document.querySelector("input[type = 'password']");      
-     let inputs = [emailEl, passwordEl];
-     
-     function designInputs() {
-       inputs.forEach(input => {
-           input.style.cssText = `
-	               width: 150px;
-	               height: 20px;
-	               border-radius: 5px;
-	               margin: 5px;
-	               text-align: center;
-	         `;
-       })
-     			
-     } 
-       
-     import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
-
-    // Replace with your project URL and anon key
-    const supabaseUrl = "https://oimiskqpsvcwvlfrmtwf.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbWlza3Fwc3Zjd3ZsZnJtdHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MjQ1MzQsImV4cCI6MjA3MTEwMDUzNH0.EFhfKj_9wneZ4Px64n1Vq9cASHN43xmgBEWwNAFycTE";
-   
-    const supabase = createClient(supabaseUrl, supabaseKey);          
-    
-    window.done = async() => {
-      alert("it getin");
-      if(emailEl.value == "" || passwordEl.value == "") {
-          alert("please fill all inputs");
-          return;
-      }
-      const { data, error } = await supabase.auth.signUp({
-        email: emailEl.value,
-        password: passwordEl.value,
-      });
-      if (error) console.error("Signup error:", error.message);
-      else alert("Signed up:", data);
-    }
+    <div class="container">
+        <div class="brand">SignUp App</div>
+        <h1>Create Account</h1>
         
-        designInputs();
+        <div class="input-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" placeholder="Enter your email">
+        </div>
+        
+        <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        
+        <button onclick="done()">
+            <span class="loader" id="loader"></span>
+            <span id="button-text">Sign Up</span>
+        </button>
+        
+        <div class="message" id="message"></div>
+    </div>
+
+    <script type="module">
+        // Import Supabase (using CDN)
+        import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
+        
+        // Initialize Supabase
+        const supabaseUrl = "https://oimiskqpsvcwvlfrmtwf.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbWlza3Fwc3Zjd3ZsZnJtdHdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MjQ1MzQsImV4cCI6MjA3MTEwMDUzNH0.EFhfKj_9wneZ4Px64n1Vq9cASHN43xmgBEWwNAFycTE";
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Get DOM elements
+        const emailEl = document.getElementById("email");
+        const passwordEl = document.getElementById("password");
+        const messageEl = document.getElementById("message");
+        const loader = document.getElementById("loader");
+        const buttonText = document.getElementById("button-text");
+        
+        // Style inputs
+        emailEl.style.cssText = `
+            width: 100%;
+            height: 20px;
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin: 5px 0;
+            text-align: left;
+        `;
+        
+        passwordEl.style.cssText = emailEl.style.cssText;
+        
+        // Define the done function
+        window.done = async function() {
+            // Show loading state
+            loader.style.display = "inline-block";
+            buttonText.textContent = "Processing...";
+            
+            // Validate inputs
+            if(emailEl.value === "" || passwordEl.value === "") {
+                showMessage("Please fill all fields", "error");
+                loader.style.display = "none";
+                buttonText.textContent = "Sign Up";
+                return;
+            }
+            
+            // Validate email format
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailEl.value)) {
+                showMessage("Please enter a valid email address", "error");
+                loader.style.display = "none";
+                buttonText.textContent = "Sign Up";
+                return;
+            }
+            
+            try {
+                // Attempt to sign up
+                const { data, error } = await supabase.auth.signUp({
+                    email: emailEl.value,
+                    password: passwordEl.value,
+                });
+                
+                if (error) {
+                    console.error("Signup error:", error.message);
+                    showMessage("Error: " + error.message, "error");
+                } else {
+                    console.log("Signed up:", data);
+                    showMessage("Success! Check your email for confirmation.", "success");
+                    // Clear form
+                    emailEl.value = "";
+                    passwordEl.value = "";
+                }
+            } catch (err) {
+                console.error("Unexpected error:", err);
+                showMessage("An unexpected error occurred", "error");
+            } finally {
+                // Reset button state
+                loader.style.display = "none";
+                buttonText.textContent = "Sign Up";
+            }
+        }
+        
+        // Helper function to show messages
+        function showMessage(text, type) {
+            messageEl.textContent = text;
+            messageEl.className = "message " + type;
+            messageEl.style.display = "block";
+            
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                messageEl.style.display = "none";
+            }, 5000);
+        }
+        
+        // Allow form submission with Enter key
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                done();
+            }
+        });
     </script>
 </body>
 </html>
