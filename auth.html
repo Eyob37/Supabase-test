@@ -34,7 +34,7 @@
    
     const supabase = createClient(supabaseUrl, supabaseKey);          
     
-    async function done() {
+    window.done = async() => {
       alert("it getin");
       if(emailEl.value == "" || passwordEl.value == "") {
           alert("please fill all inputs");
