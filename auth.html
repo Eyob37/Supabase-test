@@ -26,7 +26,7 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
             padding: 30px;
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             text-align: center;
         }
         
@@ -104,6 +104,12 @@
             border: 1px solid #f5c6cb;
         }
         
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
         .loader {
             display: inline-block;
             width: 20px;
@@ -126,6 +132,35 @@
             color: #6e8efb;
             font-size: 24px;
             font-weight: 700;
+        }
+        
+        .session-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            text-align: left;
+            display: none;
+        }
+        
+        .session-info h3 {
+            margin-bottom: 10px;
+            color: #6e8efb;
+        }
+        
+        .session-details {
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .user-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #6e8efb;
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -160,6 +195,11 @@
         </button>
         
         <div class="message" id="message"></div>
+        
+        <div class="session-info" id="session-info">
+            <h3>Session Information</h3>
+            <div class="session-details" id="session-details"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -180,6 +220,8 @@
         const buttonText = document.getElementById("button-text");
         const emailGroup = document.getElementById("email-group");
         const passwordGroup = document.getElementById("password-group");
+        const sessionInfo = document.getElementById("session-info");
+        const sessionDetails = document.getElementById("session-details");
         
         // Style inputs
         emailEl.style.cssText = `
@@ -218,6 +260,26 @@
         // Initialize UI
         updateUI();
         
+        // Check initial session state
+        checkSessionOnLoad();
+        
+        async function checkSessionOnLoad() {
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error("Session check error:", error.message);
+                    return;
+                }
+                
+                if (data.session) {
+                    displaySessionInfo(data.session);
+                }
+            } catch (err) {
+                console.error("Unexpected error checking session:", err);
+            }
+        }
+        
         // Define the auth handler function
         window.handleAuth = async function() {
             const action = actionEl.value;
@@ -225,6 +287,9 @@
             // Show loading state
             loader.style.display = "inline-block";
             buttonText.textContent = "Processing...";
+            
+            // Hide previous session info
+            sessionInfo.style.display = "none";
             
             // Validate inputs for actions that require them
             if (action !== "logout" && action !== "check") {
@@ -269,12 +334,17 @@
                         break;
                         
                     case "check":
-                        const session = await supabase.auth.getSession();
-                        if (session.data.session) {
-                            showMessage(`Logged in as: ${session.data.session.user.email}`, "success");
+                        const { data, error } = await supabase.auth.getSession();
+                        
+                        if (error) {
+                            showMessage("Error checking session: " + error.message, "error");
+                        } else if (data.session) {
+                            displaySessionInfo(data.session);
+                            showMessage("Active session found", "success");
                         } else {
-                            showMessage("No active session", "error");
+                            showMessage("No active session found", "info");
                         }
+                        
                         loader.style.display = "none";
                         updateUI();
                         return;
@@ -295,8 +365,12 @@
                         passwordEl.value = "";
                     } else if (action === "login") {
                         showMessage("Login successful!", "success");
+                        if (data.session) {
+                            displaySessionInfo(data.session);
+                        }
                     } else if (action === "logout") {
                         showMessage("Logged out successfully", "success");
+                        sessionInfo.style.display = "none";
                     }
                 }
             } catch (err) {
@@ -307,6 +381,17 @@
                 loader.style.display = "none";
                 updateUI();
             }
+        }
+        
+        function displaySessionInfo(session) {
+            sessionDetails.innerHTML = `
+                <p><strong>User ID:</strong> ${session.user.id}</p>
+                <p><strong>Email:</strong> ${session.user.email}</p>
+                <p><strong>Authenticated at:</strong> ${new Date(session.user.created_at).toLocaleString()}</p>
+                <p><strong>Session expires at:</strong> ${new Date(session.expires_at).toLocaleString()}</p>
+                <div class="user-badge">Active Session</div>
+            `;
+            sessionInfo.style.display = "block";
         }
         
         // Helper function to show messages
@@ -330,10 +415,20 @@
         
         // Session listener
         supabase.auth.onAuthStateChange((event, session) => {
+            console.log("Auth state changed:", event, session);
+            
             if (session) {
                 console.log("👤 Logged in as:", session.user.email);
+                if (event === "SIGNED_IN") {
+                    showMessage("Signed in successfully!", "success");
+                    displaySessionInfo(session);
+                }
             } else {
                 console.log("⚠️ Not logged in");
+                if (event === "SIGNED_OUT") {
+                    showMessage("Signed out successfully", "success");
+                    sessionInfo.style.display = "none";
+                }
             }
         });
     </script>
