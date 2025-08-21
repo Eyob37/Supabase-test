@@ -184,6 +184,16 @@
        font-size: 0.8rem;
     }
 
+    #gotoauth{
+       position: fixed;
+       bottom: 5px;
+       right: 50%;
+       width: 150px;
+       height: 25px;
+       border-radius: 10px;
+       font-size: 0.8rem;
+    }
+
     .empty-state p {
       margin-top: 10px;
       font-size: 1.1rem;
@@ -239,6 +249,8 @@
     </section>
   </div>
   <button id = "gotofile" onclick = "window.location.href = 'file-manage.html'">go to file manager</button>
+  <button id = "gotoauth" onclick = "window.location.href = 'auth.html'">go to auth</button>
+
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 
